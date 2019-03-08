@@ -33,7 +33,7 @@ export default class Chat {
         this.socket.emit("changeNickName", val);
         break;
       default:
-        this.sendMessage();
+        console.log();
         break;
     }
   }

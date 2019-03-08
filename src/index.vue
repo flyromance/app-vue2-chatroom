@@ -1,8 +1,10 @@
 <template>
   <div id="container">
-    <div class="room-header">{{'房间号'}}</div>
+    <div class="room-header">hi {{userName}}, welcome to room {{roomName}}</div>
     <div class="room-content">
-      <div class="room-window"></div>
+      <div class="room-window">
+        <div v-for="(item, index) in messageList" :key="index">{{item}}</div>
+      </div>
       <div class="room-list">
         <div v-for="(item) in roomList" :key="item.id">{{item.name}}</div>
       </div>
@@ -17,34 +19,63 @@
 </template>
 
 <script>
-import Chat from './lib/chat.js';
-import io from 'socket.io-client';
-const socket = io.connect();
-const chat = new Chat(socket);
+import Chat from "./lib/chat.js";
+import io from "socket.io-client";
 
 export default {
   props: {},
   data() {
     return {
+      userName: "",
+      roomName: "",
+      messageList: [],
       message: "",
-      roomList: [
-        {
-          id: 12,
-          name: "room1"
-        }
-      ]
+      roomList: []
     };
   },
   computed: {},
   methods: {
     handleSend() {
-      if (message[0] === "/") {
-        //
+      if (this.message.indexOf("/") === 0) {
+        this._chat.processCommand(this.message);
       } else {
-
+        if (!this.roomName) {
+          alert("先加入或者创建聊天室");
+        } else {
+          this._chat.sendMessage(this.roomName, this.message);
+        }
       }
     }
-  }
+  },
+  mounted() {
+    const socket = io.connect();
+    let chat = null;
+
+    socket.on("connect", () => {
+      console.log("connect");
+      this._chat = chat = new Chat(socket);
+    });
+
+    socket.on("joinResult", data => {
+      console.log(data);
+    });
+
+    socket.on("message", data => {
+      console.log(data);
+      this.messageList.push(data.text);
+    });
+
+    socket.on("changeNickNameResult", data => {
+      if (data.success) {
+        this.userName = data.name;
+      }
+    });
+
+    socket.on("disconnect", () => {
+      console.log("disconnect");
+    });
+  },
+  unmounted() {}
 };
 </script>
 
